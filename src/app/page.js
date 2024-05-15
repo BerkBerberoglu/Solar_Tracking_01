@@ -82,10 +82,10 @@ export default function Home() {
 
   //Cooling Unit Code
   useEffect(() => {
-    if (HeatInstant >= 25 && !coolingStarted) {
+    if (HeatInstant >= 40 && !coolingStarted) {
       StartCooling();
       setCoolingStarted(true);
-    }else if (HeatInstant <= 23)
+    }else if (HeatInstant <= 30)
       StopCooling();
       setCoolingStarted(false);
   }, [HeatInstant, coolingStarted]);
