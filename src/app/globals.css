@@ -10,8 +10,48 @@ html{
   background-size: cover;
 }
 
-.customButton:hover {
-  background-color: rgb(11, 212, 226);
-  color: #000000;
-  font-size: 20px;
+.coolingButton {
+  display: inline-block;
+  padding: 15px 25px;
+  font-size: 24px;
+  cursor: pointer;
+  text-align: center;
+  text-decoration: none;
+  outline: none;
+  color: #fff;
+  background-color: #046daa;
+  border: none;
+  border-radius: 15px;
+  box-shadow: 0 9px #999;
+}
+
+.coolingButton:hover {background-color: #00538a}
+
+.coolingButton:active {
+  background-color: #00538a;
+  box-shadow: 0 5px #666;
+  transform: translateY(4px);
+}
+
+.cleaningButton {
+  display: inline-block;
+  padding: 15px 25px;
+  font-size: 24px;
+  cursor: pointer;
+  text-align: center;
+  text-decoration: none;
+  outline: none;
+  color: #fff;
+  background-color: #04AA6D;
+  border: none;
+  border-radius: 15px;
+  box-shadow: 0 9px #999;
+}
+
+.cleaningButton:hover {background-color: #3e8e41}
+
+.cleaningButton:active {
+  background-color: #3e8e41;
+  box-shadow: 0 5px #666;
+  transform: translateY(4px);
 }

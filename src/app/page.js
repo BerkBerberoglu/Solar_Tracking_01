@@ -23,25 +23,27 @@ const database = getDatabase(app);
 //const analytics = getAnalytics(app); //For not realtime database!!!
 
 export default function Home() {
-  const [LED, setLED] = useState(-1);
-  const [LDRs, setLDRs] = useState(-1);
   const [HeatInstant, setHeatInstant] = useState(-1);
+
+  //For cleaning
+  const [Cleaning, setCleaning] = useState(-1);
+  let [forceCleaning, setForceCleaning] = useState(false);
+  let [statusMessage, setStatusMessage] = useState("Default Status Message");
+
+  //For Cooling
   const [Cooling, setCooling] = useState(-1);
   const [coolingStarted, setCoolingStarted] = useState(false);
+  const [forceCooling, setForceCooling] = useState(false);
 
-  const fetchLED = async () => {
-    const dataRef = ref(database, "LED/");
-    onValue(dataRef, (snapshot) => {
-      setLED(snapshot.val());
-    });
-  };
-
-  const fetchLDRs = async () => {
-    const dataRef = ref(database, "LDRs/");
-    onValue(dataRef, (snapshot) => {
-      setLDRs(snapshot.val());
-    });
-  };
+  const [data, setData] = useState("");
+  const [voltage1, setVoltage1] = useState(-1);
+  const [voltage2, setVoltage2] = useState(-1);
+  const [LDR_Up_Right, setLDR1] = useState(-1);
+  const [LDR_Up_Left, setLDR2] = useState(-1);
+  const [LDR_Down_Right, setLDR3] = useState(-1);
+  const [LDR_Down_Left, setLDR4] = useState(-1);
+  const [servov, setservov] = useState(-1);
+  const [servoh, setservoh] = useState(-1);
 
   const fetchHeatInstant = async () => {
     const dataRef = ref(database, "HeatInstant/");
@@ -57,33 +59,85 @@ export default function Home() {
     });
   };
 
+  const fetchCleaning = async () => {
+    const dataRef = ref(database, "Cleaning/");
+    onValue(dataRef, (snapshot) => {
+      setCleaning(snapshot.val());
+    });
+  };
+
+  const fetchData = async () => {
+    const dataRef = ref(database, "Data/");
+    onValue(dataRef, (snapshot) => {
+      setData(snapshot.val());
+    });
+  };
+
   useEffect(() => {
-    fetchLED();
-    fetchLDRs();
     fetchHeatInstant();
     fetchCooling();
+    fetchCleaning();
+    fetchData();
   }, []);
 
   //Cooling Unit Code
   useEffect(() => {
-    if (HeatInstant >= 40 && !coolingStarted) {
+    if(forceCooling) {
+      StartCooling();
+      setCoolingStarted(true);
+    }else if (HeatInstant >= 40 && !coolingStarted) {
       StartCooling();
       setCoolingStarted(true);
     }else if (HeatInstant <= 30)
       StopCooling();
       setCoolingStarted(false);
-  }, [HeatInstant, coolingStarted]);
+  }, [HeatInstant, coolingStarted, forceCooling]);
 
-  const ButonOn = async () => {
-    update(ref(database, '/'), {
-      LED: 1
-    });
+   //Cleaning Unit Code
+  let shouldClean = (forceCleaning, messageSetter) => {
+    let isDirty = voltage2 - voltage1 > 1.8;
+    let isLDRTriggered = LDR_Up_Right+LDR_Up_Left+LDR_Down_Right+LDR_Down_Left < 200;
+    let isSnowy = isLDRTriggered && isDirty;
+
+    //Forced
+    if (forceCleaning) {
+        messageSetter("Caused because its forced.")
+        return true
+    }
+    //Dirty
+    if (isDirty) {
+        messageSetter("Caused because of dirt.")
+        return true
+    }
+    //Snowy
+    if (isSnowy) {
+        messageSetter("Caused because of snow.")
+        return true
+    }
+
+    // If there is no problem 
+    messageSetter("Panel is clean.")
+    return false
   }
 
-  const ButonOff = async () => {
-    update(ref(database, '/'), {
-      LED: 0
-    });
+  useEffect(() => {
+    const data_array = data.split(',');
+    setVoltage1(+data_array[0]);
+    setVoltage2(+data_array[1]);
+    setLDR1(+data_array[2]);
+    setLDR2(+data_array[3]);
+    setLDR3(+data_array[4]);
+    setLDR4(+data_array[5]);
+    setservov(+data_array[6]);
+    setservoh(+data_array[7]);
+  }, [data]);
+
+  const ForceCooling = async () => {
+    setForceCooling(!forceCooling);
+  }
+
+  const ForceCleaning = async () => {
+    setForceCleaning(!forceCleaning);
   }
 
   const StartCooling = async () => {
@@ -98,17 +152,40 @@ export default function Home() {
     });
   }
 
+  const StartCleaning = async () => {
+    update(ref(database, '/'), {
+      Cleaning: 1
+    });
+  }
+
+  const StopCleaning = async () => {
+    update(ref(database, '/'), {
+      Cleaning: 0
+    });
+  }
+
+  useState(() => {
+    if (shouldClean(forceCleaning, setStatusMessage)) {
+        StartCleaning();
+    } else {
+        StopCleaning();
+    }
+  }, [])
+
   return (
     <div>
-      <h1>LDR_Down_Left: {LDRs.LDR_Down_Left}</h1>
-      <h1>LDR_Down_Right: {LDRs.LDR_Down_Right}</h1>
-      <h1>LDR_Up_Left: {LDRs.LDR_Up_Left}</h1>
-      <h1>LDR_Up_Right: {LDRs.LDR_Up_Right}</h1>
-      <h1>Arduino LED ON/OFF: {LED}</h1>
+      <h1>LDR Top LEFT: {LDR_Up_Left} --- Top RIGHT: {LDR_Up_Right}</h1>
+      <h1>LDR Bottom LEFT: {LDR_Down_Left} --- Bottom RIGHT: {LDR_Down_Right}</h1>
+      <h1>Smart Solar System Voltage: {voltage1}</h1>
+      <h1>Normal Panel Voltage: {voltage2}</h1>
+      <h1>Vertical Angle: {servov}°</h1>
+      <h1>Horizontal Angle: {servoh}°</h1>
       <h1>Cooling Unit ON/OFF: {Cooling}</h1>
+      <h1>Cleaning Unit ON/OFF: {Cleaning}</h1>
+      <h1>Panel surface is {statusMessage}</h1>
       <h1>Heat: {HeatInstant}°C</h1>
-      <button className="customButton" onClick={() => ButonOn()}>ON</button>
-      <button className="customButton" onClick={() => ButonOff()}>OFF</button>
+      <button className="coolingButton" onClick={() => ForceCooling()}>Cooling</button>
+      <button className="cleaningButton" onClick={() => ForceCleaning()}>Cleaning</button>
     </div>
   );
 }
