@@ -2,7 +2,7 @@
 
 "use client";
 
-import { DataSnapshot, get, onValue, query, ref, set, update, getDatabase } from "firebase/database";
+import { onValue, ref, update, getDatabase } from "firebase/database";
 import { useEffect, useState } from "react";
 import { initializeApp } from "firebase/app";
 
