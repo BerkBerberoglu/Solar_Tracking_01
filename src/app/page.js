@@ -26,9 +26,9 @@ export default function Home() {
   const [HeatInstant, setHeatInstant] = useState(-1);
 
   //For cleaning
-  const [Cleaning, setCleaning] = useState(-1);
-  let [forceCleaning, setForceCleaning] = useState(false);
-  let [statusMessage, setStatusMessage] = useState("Default Status Message");
+  const [cleaning, setCleaning] = useState(-1);
+  const [forceCleaning, setForceCleaning] = useState(false);
+  const [statusMessage, setStatusMessage] = useState("Default Status Message");
 
   //For Cooling
   const [Cooling, setCooling] = useState(-1);
@@ -42,8 +42,6 @@ export default function Home() {
   const [LDR_Up_Left, setLDR2] = useState(-1);
   const [LDR_Down_Right, setLDR3] = useState(-1);
   const [LDR_Down_Left, setLDR4] = useState(-1);
-  const [servov, setservov] = useState(-1);
-  const [servoh, setservoh] = useState(-1);
 
   const fetchHeatInstant = async () => {
     const dataRef = ref(database, "HeatInstant/");
@@ -73,47 +71,35 @@ export default function Home() {
     });
   };
 
-  useEffect(() => {
+  const fetchStatus = () => {
     fetchHeatInstant();
     fetchCooling();
     fetchCleaning();
     fetchData();
-  }, []);
+  }
 
-  //Cooling Unit Code
-  useEffect(() => {
-    if(forceCooling) {
-      StartCooling();
-      setCoolingStarted(true);
-    }else if (HeatInstant >= 40 && !coolingStarted) {
-      StartCooling();
-      setCoolingStarted(true);
-    }else if (HeatInstant <= 30)
-      StopCooling();
-      setCoolingStarted(false);
-  }, [HeatInstant, coolingStarted, forceCooling]);
 
-   //Cleaning Unit Code
-  let shouldClean = (forceCleaning, messageSetter) => {
-    let isDirty = voltage2 - voltage1 > 1.8;
-    let isLDRTriggered = LDR_Up_Right+LDR_Up_Left+LDR_Down_Right+LDR_Down_Left < 200;
+  //Cleaning Unit Code
+  let shouldClean = (forceCleaning = false, messageSetter) => {
+    let isDirty = voltage1 - voltage2 > 1.8;
+    let isLDRTriggered = LDR_Up_Right + LDR_Up_Left + LDR_Down_Right + LDR_Down_Left < 200;
     let isSnowy = isLDRTriggered && isDirty;
-
     //Forced
     if (forceCleaning) {
-        messageSetter("Caused because its forced.")
-        return true
-    }
-    //Dirty
-    if (isDirty) {
-        messageSetter("Caused because of dirt.")
-        return true
+      messageSetter("Caused because its forced.")
+      return true
     }
     //Snowy
     if (isSnowy) {
-        messageSetter("Caused because of snow.")
-        return true
+      messageSetter("Caused because of snow.")
+      return true
     }
+    //Dirty
+    if (isDirty) {
+      messageSetter("Caused because of dirt.")
+      return true
+    }
+
 
     // If there is no problem 
     messageSetter("Panel is clean.")
@@ -128,8 +114,6 @@ export default function Home() {
     setLDR2(+data_array[3]);
     setLDR3(+data_array[4]);
     setLDR4(+data_array[5]);
-    setservov(+data_array[6]);
-    setservoh(+data_array[7]);
   }, [data]);
 
   const ForceCooling = async () => {
@@ -139,6 +123,7 @@ export default function Home() {
   const ForceCleaning = async () => {
     setForceCleaning(!forceCleaning);
   }
+
 
   const StartCooling = async () => {
     update(ref(database, '/'), {
@@ -164,13 +149,26 @@ export default function Home() {
     });
   }
 
-  useState(() => {
+
+  useEffect(() => {
+    fetchStatus()
+
+    if (forceCooling) {
+      StartCooling();
+      setCoolingStarted(true);
+    } else if (HeatInstant >= 40 && !coolingStarted) {
+      StartCooling();
+      setCoolingStarted(true);
+    } else if (HeatInstant <= 30)
+      StopCooling();
+    setCoolingStarted(false);
+
     if (shouldClean(forceCleaning, setStatusMessage)) {
-        StartCleaning();
+      StartCleaning();
     } else {
-        StopCleaning();
+      StopCleaning();
     }
-  }, [])
+  }, [HeatInstant, cleaning, coolingStarted, Cooling, statusMessage, forceCooling, forceCleaning, data, voltage1, voltage2, LDR_Up_Right, LDR_Up_Left, LDR_Down_Right, LDR_Down_Left])
 
   return (
     <div>
@@ -178,14 +176,13 @@ export default function Home() {
       <h1>LDR Bottom LEFT: {LDR_Down_Left} --- Bottom RIGHT: {LDR_Down_Right}</h1>
       <h1>Smart Solar System Voltage: {voltage1}</h1>
       <h1>Normal Panel Voltage: {voltage2}</h1>
-      <h1>Vertical Angle: {servov}°</h1>
-      <h1>Horizontal Angle: {servoh}°</h1>
+
       <h1>Cooling Unit ON/OFF: {Cooling}</h1>
-      <h1>Cleaning Unit ON/OFF: {Cleaning}</h1>
+      <h1>Cleaning Unit ON/OFF: {cleaning}</h1>
       <h1>{statusMessage}</h1> {/*Panel surface condition*/}
       <h1>Temperarute: {HeatInstant}°C</h1>
       <button className="coolingButton" onClick={() => ForceCooling()}>Cooling</button>
-      <button className="cleaningButton" onClick={() => ForceCleaning()}>Cleaning</button>
+      <button className="cleaningButton" onClick={() => ForceCleaning()}>Force Clean</button>
     </div>
   );
 }
