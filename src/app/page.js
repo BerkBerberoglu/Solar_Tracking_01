@@ -183,7 +183,7 @@ export default function Home() {
       <h1>Cooling Unit ON/OFF: {Cooling}</h1>
       <h1>Cleaning Unit ON/OFF: {Cleaning}</h1>
       <h1>{statusMessage}</h1> {/*Panel surface condition*/}
-      <h1>Heat: {HeatInstant}°C</h1>
+      <h1>Temperarute: {HeatInstant}°C</h1>
       <button className="coolingButton" onClick={() => ForceCooling()}>Cooling</button>
       <button className="cleaningButton" onClick={() => ForceCleaning()}>Cleaning</button>
     </div>
