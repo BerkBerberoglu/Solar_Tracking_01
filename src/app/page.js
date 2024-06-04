@@ -81,8 +81,8 @@ export default function Home() {
 
   //Cleaning Unit Code
   let shouldClean = (forceCleaning = false, messageSetter) => {
-    let isDirty = voltage1 - voltage2 > 1.8;
-    let isLDRTriggered = LDR_Up_Right + LDR_Up_Left + LDR_Down_Right + LDR_Down_Left < 200;
+    let isDirty = voltage1 - voltage2 > 6;
+    let isLDRTriggered = LDR_Up_Right + LDR_Up_Left + LDR_Down_Right + LDR_Down_Left < 2000;
     let isSnowy = isLDRTriggered && isDirty;
     //Forced
     if (forceCleaning) {
